@@ -1,4 +1,4 @@
-module Zerorpc
+module ZeroRPC
 
 import ZMQ
 import Msgpack
