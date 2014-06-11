@@ -1,4 +1,4 @@
-module Zerorpc
+module ZeroRPC
 
 import ZMQ
 import Msgpack
@@ -21,7 +21,7 @@ type Server
     end
 
     ctx = ZMQ.Context(1)
-    socket = ZMQ.Socket(ctx, ZMQ.REP)
+    socket = ZMQ.Socket(ctx, ZMQ.ROUTER)
     return new (functions, ctx, socket)
   end
 end
@@ -32,17 +32,19 @@ end
 
 function run(server::Server)
   while true
-      raw_in = convert(IOStream, ZMQ.recv(server.socket))
-      seek(raw_in, 0)
-      message = Msgpack.unpack(raw_in.data)
+      envelope::Array{ZMQ.Message} = ZMQ.recv_multipart(server.socket)
+      raw_msg = convert(IOStream, envelope[3])
+      seek(raw_msg, 0)
+      message = Msgpack.unpack(raw_msg.data)
 
       f = server.functions[message[2]]
       ret = apply(f, message[3])
 
       header = { "v" => 3, "message_id" => string(Random.uuid4()), "response_to" => message[1]["message_id"] }
       response = Any[header, "OK", [ret]]
-      raw_out = ZMQ.Message(Msgpack.pack(response))
-      ZMQ.send(server.socket, raw_out)
+      raw_reply = ZMQ.Message(Msgpack.pack(response))
+      envelope[3] = raw_reply
+      ZMQ.send_multipart(server.socket, envelope)
   end
 end
 

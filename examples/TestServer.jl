@@ -1,4 +1,4 @@
-import Zerorpc
+import ZeroRPC
 
 module TestServer
 
@@ -15,6 +15,6 @@ export hello, add
 
 end # module
 
-server = Zerorpc.Server(TestServer)
-Zerorpc.bind(server, "tcp://127.0.0.1:4242")
-Zerorpc.run(server)
+server = ZeroRPC.Server(TestServer)
+ZeroRPC.bind(server, "tcp://127.0.0.1:4242")
+ZeroRPC.run(server)
