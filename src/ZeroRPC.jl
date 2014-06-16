@@ -60,9 +60,10 @@ function run(server::Server)
             ret = Any[apply(server.functions[message[2]], message[3])]
           catch e
             buf = IOBuffer()
-            showerror(STDERR, e, catch_backtrace())
             showerror(buf, e, catch_backtrace())
-            ret = Any[string(e), string(e), takebuf_string(buf)]
+            bt = takebuf_string(buf)
+            println(bt)
+            ret = Any[string(e), string(e), bt]
             response_type = "ERR"
           end
         end
