@@ -53,8 +53,18 @@ function run(server::Server)
       continue
     end
 
+    response_type = "OK"
     ret = nothing
-    f = function() ret = apply(server.functions[message[2]], message[3]) end
+    f = function()
+          try
+            ret = Any[apply(server.functions[message[2]], message[3])]
+          catch e
+            buf = IOBuffer()
+            showerror(buf, e, catch_backtrace())
+            ret = Any[string(e), string(e), takebuf_string(buf)]
+            response_type = "ERR"
+          end
+        end
     task = @async f()
     a = time()
     while !istaskdone(task)
@@ -70,7 +80,7 @@ function run(server::Server)
     end
 
     header = { "v" => 3, "message_id" => string(Random.uuid4()), "response_to" => message[1]["message_id"] }
-    response = Any[header, "OK", Any[ret]]
+    response = Any[header, response_type, ret]
     raw_response = ZMQ.Message(Msgpack.pack(response))
     envelope[3] = raw_response
     ZMQ.send_multipart(server.socket, envelope)
